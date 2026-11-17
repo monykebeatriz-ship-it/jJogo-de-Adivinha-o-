@@ -1,1 +1,511 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Jogo de Adivinhação de Palavras</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background-color: #e8efff;
+            color: #24304a;
+        }
+
+        .jogo {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #263b70;
+        }
+
+        #palavra {
+            font-size: 2rem;
+            letter-spacing: 8px;
+            margin: 30px 0;
+            font-weight: bold;
+            overflow-wrap: anywhere;
+        }
+
+        input {
+            width: 50px;
+            padding: 10px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid #cbd5eb;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 16px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #3556a5;
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #263f82;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #mensagem {
+            font-weight: bold;
+            color: #3556a5;
+        }
+
+        .placar {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .jogo {
+                padding: 20px 12px;
+            }
+
+            #palavra {
+                letter-spacing: 4px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="jogo">
+
+        <h1>Adivinhe a Palavra</h1>
+
+        <p>
+            Categoria:
+            <strong id="categoria">Tecnologia</strong>
+        </p>
+
+        <p id="dica">Dica: descubra a palavra!</p>
+
+        <p id="palavra">_ _ _ _ _</p>
+
+        <p>
+            Tentativas restantes:
+            <span id="tentativas">6</span>
+        </p>
+
+        <label for="letra">Digite uma letra:</label>
+
+        <br><br>
+
+        <input
+            id="letra"
+            type="text"
+            maxlength="1"
+            autocomplete="off"
+        >
+
+        <button id="btn-tentar">Tentar</button>
+
+        <p id="mensagem" aria-live="polite">
+            Boa sorte!
+        </p>
+
+        <p>
+            Letras utilizadas:
+            <span id="letras-usadas">Nenhuma</span>
+        </p>
+
+        <button id="btn-reiniciar">
+            Nova partida
+        </button>
+
+        <section class="placar">
+
+            <p>
+                Partidas:
+                <span id="partidas">0</span>
+            </p>
+
+            <p>
+                Vitórias:
+                <span id="vitorias">0</span>
+            </p>
+
+            <p>
+                Derrotas:
+                <span id="derrotas">0</span>
+            </p>
+
+        </section>
+
+    </main>
+
+    <script>
+
+        // Lista de palavras
+        const palavras = [
+            {
+                palavra: "javascript",
+                categoria: "Tecnologia",
+                dica: "Linguagem de programação usada na Web."
+            },
+            {
+                palavra: "computador",
+                categoria: "Tecnologia",
+                dica: "Máquina utilizada para processar informações."
+            },
+            {
+                palavra: "internet",
+                categoria: "Tecnologia",
+                dica: "Rede mundial de computadores."
+            },
+            {
+                palavra: "teclado",
+                categoria: "Tecnologia",
+                dica: "Usado para digitar."
+            },
+            {
+                palavra: "navegador",
+                categoria: "Tecnologia",
+                dica: "Programa utilizado para acessar sites."
+            },
+            {
+                palavra: "girassol",
+                categoria: "Natureza",
+                dica: "Flor que acompanha a luz do sol."
+            },
+            {
+                palavra: "elefante",
+                categoria: "Animais",
+                dica: "Animal que possui uma tromba."
+            },
+            {
+                palavra: "borboleta",
+                categoria: "Animais",
+                dica: "Inseto com asas coloridas."
+            },
+            {
+                palavra: "abacaxi",
+                categoria: "Alimentos",
+                dica: "Fruta tropical com casca áspera."
+            },
+            {
+                palavra: "morango",
+                categoria: "Alimentos",
+                dica: "Fruta vermelha."
+            },
+            {
+                palavra: "brasilia",
+                categoria: "Cidades",
+                dica: "Capital do Brasil."
+            },
+            {
+                palavra: "recife",
+                categoria: "Cidades",
+                dica: "Capital de Pernambuco."
+            }
+        ];
+
+        let palavraSecreta;
+        let letrasCorretas = [];
+        let letrasUsadas = [];
+        let tentativas = 6;
+
+        let partidas = 0;
+        let vitorias = 0;
+        let derrotas = 0;
+
+        let jogoEncerrado = false;
+
+        // Elementos do HTML
+        const elementoPalavra =
+            document.getElementById("palavra");
+
+        const elementoTentativas =
+            document.getElementById("tentativas");
+
+        const inputLetra =
+            document.getElementById("letra");
+
+        const mensagem =
+            document.getElementById("mensagem");
+
+        const elementoLetrasUsadas =
+            document.getElementById("letras-usadas");
+
+        const elementoCategoria =
+            document.getElementById("categoria");
+
+        const elementoDica =
+            document.getElementById("dica");
+
+        const botaoTentar =
+            document.getElementById("btn-tentar");
+
+        const botaoReiniciar =
+            document.getElementById("btn-reiniciar");
+
+
+        // Iniciar o jogo
+        function iniciarJogo() {
+
+            const indice = Math.floor(
+                Math.random() * palavras.length
+            );
+
+            const escolha = palavras[indice];
+
+            palavraSecreta = escolha.palavra;
+
+            tentativas = 6;
+
+            letrasCorretas = [];
+            letrasUsadas = [];
+
+            jogoEncerrado = false;
+
+            elementoCategoria.textContent =
+                escolha.categoria;
+
+            elementoDica.textContent =
+                "Dica: " + escolha.dica;
+
+            elementoTentativas.textContent =
+                tentativas;
+
+            elementoLetrasUsadas.textContent =
+                "Nenhuma";
+
+            mensagem.textContent =
+                "Boa sorte!";
+
+            inputLetra.value = "";
+            inputLetra.disabled = false;
+
+            botaoTentar.disabled = false;
+
+            atualizarPalavra();
+
+            inputLetra.focus();
+        }
+
+
+        // Mostrar a palavra escondida
+        function atualizarPalavra() {
+
+            let exibicao = "";
+
+            for (
+                let i = 0;
+                i < palavraSecreta.length;
+                i++
+            ) {
+
+                const letra = palavraSecreta[i];
+
+                if (letrasCorretas.includes(letra)) {
+
+                    exibicao += letra.toUpperCase() + " ";
+
+                } else {
+
+                    exibicao += "_ ";
+                }
+            }
+
+            elementoPalavra.textContent = exibicao;
+        }
+
+
+        // Verificar a letra digitada
+        function verificarLetra() {
+
+            if (jogoEncerrado) return;
+
+            const letra =
+                inputLetra.value.trim().toLowerCase();
+
+            inputLetra.value = "";
+
+            if (!/^[a-z]$/.test(letra)) {
+
+                mensagem.textContent =
+                    "Digite apenas uma letra válida.";
+
+                inputLetra.focus();
+
+                return;
+            }
+
+            if (letrasUsadas.includes(letra)) {
+
+                mensagem.textContent =
+                    "Letra já utilizada!";
+
+                inputLetra.focus();
+
+                return;
+            }
+
+            letrasUsadas.push(letra);
+
+            if (palavraSecreta.includes(letra)) {
+
+                letrasCorretas.push(letra);
+
+                mensagem.textContent =
+                    "Você acertou!";
+
+            } else {
+
+                tentativas--;
+
+                mensagem.textContent =
+                    "Você errou!";
+            }
+
+            atualizarPalavra();
+
+            elementoTentativas.textContent =
+                tentativas;
+
+            elementoLetrasUsadas.textContent =
+                letrasUsadas.join(", ").toUpperCase();
+
+            if (venceu()) {
+
+                finalizarJogo(true);
+
+            } else if (tentativas === 0) {
+
+                finalizarJogo(false);
+
+            } else {
+
+                inputLetra.focus();
+            }
+        }
+
+
+        // Verificar se o jogador venceu
+        function venceu() {
+
+            for (
+                let i = 0;
+                i < palavraSecreta.length;
+                i++
+            ) {
+
+                const letra = palavraSecreta[i];
+
+                if (!letrasCorretas.includes(letra)) {
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+
+        // Finalizar a partida
+        function finalizarJogo(ganhou) {
+
+            jogoEncerrado = true;
+
+            partidas++;
+
+            if (ganhou) {
+
+                vitorias++;
+
+                mensagem.textContent =
+                    "Parabéns! Você venceu!";
+
+            } else {
+
+                derrotas++;
+
+                mensagem.textContent =
+                    "Você perdeu! A palavra era " +
+                    palavraSecreta.toUpperCase();
+
+                letrasCorretas =
+                    [...new Set(palavraSecreta)];
+
+                atualizarPalavra();
+            }
+
+            document.getElementById("partidas").textContent =
+                partidas;
+
+            document.getElementById("vitorias").textContent =
+                vitorias;
+
+            document.getElementById("derrotas").textContent =
+                derrotas;
+
+            inputLetra.disabled = true;
+
+            botaoTentar.disabled = true;
+        }
+
+
+        // Evento do botão Tentar
+        botaoTentar.addEventListener(
+            "click",
+            verificarLetra
+        );
+
+
+        // Evento do botão Nova partida
+        botaoReiniciar.addEventListener(
+            "click",
+            iniciarJogo
+        );
+
+
+        // Desafio extra: utilizar a tecla Enter
+        inputLetra.addEventListener(
+            "keydown",
+            function(evento) {
+
+                if (evento.key === "Enter") {
+
+                    verificarLetra();
+                }
+            }
+        );
+
+
+        // Iniciar a primeira partida
+        iniciarJogo();
+
+    </script>
+
+</body>
+</html>
+
